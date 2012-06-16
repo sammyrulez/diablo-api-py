@@ -1,6 +1,9 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-import diablo
+parent_path = os.path.abspath(__file__)
+print "abs path" +  parent_path
+sys.path.insert(0, parent_path)
+#import diablo
 
-print 'super imported ', diablo
+#diablo_mod = diablo
+

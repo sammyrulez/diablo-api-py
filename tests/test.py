@@ -1,5 +1,10 @@
-import diablo
+import os
+import sys
+parent_path = os.path.abspath("..")
+sys.path.insert(0, parent_path)
+
 from unittest import TestCase
+import diablo
 from mock_client import MockHttpClient
 
 
@@ -35,3 +40,8 @@ class TestHero(TestCase):
         c.http_client = MockHttpClient()
         hero.__client__ = c
         self.assertTrue(hero.active_skills)
+        self.assertTrue(hero.passive_skills)
+        self.assertTrue(len(hero.active_skills) >0 )
+        self.assertTrue(len(hero.passive_skills) > 0)
+        self.assertTrue(hero.active_skills[0].skill.name)
+        self.assertTrue(hero.passive_skills[0].name)

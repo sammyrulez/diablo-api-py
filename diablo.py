@@ -33,6 +33,8 @@ class Client(object):
         passive_sk = []
         for skill in data['skills']['active']:
             active_sk.append(Skill(skill))
+        for skill in data['skills']['passive']:
+            passive_sk.append(SkillElement(skill['slug'], skill['name'], skill['description']))
         return active_sk, passive_sk
 
 
@@ -82,7 +84,14 @@ class Kills(object):
         self.elites = elites
 
 class Skill(object):
-
     def __init__(self,map_descr):
-        self.skill = map_descr['skill']
-        self.rune =  map_descr['rune']
+        skill_element = map_descr['skill']
+        self.skill = SkillElement(skill_element['slug'],skill_element['name'],skill_element['simpleDescription'])
+        rune_element = map_descr['rune']
+        self.rune = SkillElement(rune_element['slug'],rune_element['name'],rune_element['simpleDescription'])
+
+class SkillElement(object):
+    def __init__(self, slug ,name,simpleDescription):#TODO manage icon
+        self.slug = slug
+        self.name = name
+        self.description = simpleDescription
