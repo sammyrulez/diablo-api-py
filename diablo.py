@@ -18,6 +18,8 @@ def is_dictionary(arg):
 def sanitize_key(arg):
     return arg.replace(" ", "_").replace("-", "_")
 
+genders = {0: 'Male', 1: 'Female'}
+
 
 class Client(object):
 
@@ -123,6 +125,9 @@ class Career(ApiObject):
             heroes.append(Hero(hero, self.http_client))
         return heroes
 
+    def manage_gender(self, value):
+        return genders[value]
+
 
 class Hero(LazyObject):
 
@@ -135,4 +140,4 @@ class Hero(LazyObject):
         return self.http_client.load_hero(self.name)
 
     def manage_gender(self, value):
-        return self.genders[value]
+        return genders[value]

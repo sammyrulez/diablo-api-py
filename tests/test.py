@@ -13,6 +13,8 @@ class TestCareer(TestCase):
         self.assertTrue(career.heroes)
         self.assertTrue(len(career.heroes) > 0)
         self.assertTrue(career.heroes[0].name)
+        self.assertTrue(career.heroes[0].gender)
+        self.assertEquals(career.heroes[0].gender, 'Male')
         self.assertTrue(career.last_hero_played)
         self.assertTrue(career.last_hero_played.name)
         self.assertTrue(career.last_updated)
@@ -42,3 +44,4 @@ class TestHero(TestCase):
                 self.assertTrue(skill_emelement)
                 self.assertTrue(skill_emelement.skill)
                 self.assertTrue(skill_emelement.rune)
+        self.assertEquals(career.heroes[0].gender, 'Male')
