@@ -1,3 +1,4 @@
+import context
 import diablo
 from unittest import TestCase
 from mock_client import MockHttpClient
@@ -6,9 +7,9 @@ from mock_client import MockHttpClient
 class TestCareer(TestCase):
 
     def test_career_load(self):
-        c = diablo.Client('host')
+        c = diablo.Client('host', 'battletag_name', 'battletag_number')
         c.http_client = MockHttpClient()
-        career = c.career_profile('battletag_name', 'battletag_number')
+        career = c.career_profile()
         self.assertTrue(career.heroes)
         self.assertTrue(len(career.heroes) > 0)
         self.assertTrue(career.heroes[0].name)
@@ -20,18 +21,24 @@ class TestCareer(TestCase):
         self.assertTrue(career.kills.elites)
         self.assertTrue(career.kills.hardcoreMonsters)
 
+
 class TestHero(TestCase):
 
     def test_hero_load(self):
-        c = diablo.Client('host')
+        c = diablo.Client('host', 'battletag_name', 'battletag_number')
         c.http_client = MockHttpClient()
-        c.load_hero("ID","name")
+        hero = c.load_hero("name")
+        self.assertTrue(hero['class'])
+        self.assertEquals(hero['class'], 'barbarian')
 
-    def test_hero_lazyness(self):
-
-        hero =diablo.Hero("robin",4,0,'hunter',12321,'magnus-1')
-        self.assertFalse(hero.active_skills)
-        c = diablo.Client('host')
+    def test_lazyness(self):
+        c = diablo.Client('host', 'battletag_name', 'battletag_number')
         c.http_client = MockHttpClient()
-        hero.__client__ = c
-        self.assertTrue(hero.active_skills)
+        career = c.career_profile()
+        self.assertTrue(career.heroes[0].skills)
+        self.assertTrue(career.heroes[0].skills.active)
+        self.assertTrue(career.heroes[0].skills.passive)
+        for skill_emelement in career.heroes[0].skills.active:
+                self.assertTrue(skill_emelement)
+                self.assertTrue(skill_emelement.skill)
+                self.assertTrue(skill_emelement.rune)

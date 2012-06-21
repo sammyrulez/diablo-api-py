@@ -1,10 +1,17 @@
 
 
 class MockHttpClient(object):
+
+    checked_heros_already = False
+
     def get(self, url):
         fixture = None
         if '/hero/' in url:
-            fixture = open('tests/hero.json')
+            if not self.checked_heros_already:
+                fixture = open('tests/hero.json')
+                self.checked_heros_already = True
+            else:
+                raise Exception('Hero endpoint checked twice')
         else:
             fixture = open('tests/career.json')
         data = fixture.read()
