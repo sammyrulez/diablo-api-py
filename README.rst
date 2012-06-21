@@ -6,8 +6,8 @@ Diablo III Web Api Python Client
 
 Introduction
 ============
-this is a Python module to query Diablo 3 public data (see https://github.com/Blizzard/d3-api-docs)
-The Diablo 3 API resources are not publicly available: this implememntation is based on the actual doc.
+This is a Python module to query Diablo 3 public data (see https://github.com/Blizzard/d3-api-docs).
+The Diablo 3 API resources are not publicly available: this implementation is based on the actual doc.
 
 
 Installation
