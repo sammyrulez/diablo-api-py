@@ -1,97 +1,143 @@
-
 import requests
 import json
 
 
+def is_sequence(arg):
+    return (not hasattr(arg, "strip") and not hasattr(arg, "iterkeys") and
+            hasattr(arg, "__getitem__") and
+            hasattr(arg, "__iter__"))
+
+
+def is_dictionary(arg):
+    return (not hasattr(arg, "strip")  and hasattr(arg, "iterkeys") and
+            hasattr(arg, "__getitem__") and
+            hasattr(arg, "__iter__"))
+
+
+def sanitize_key(arg):
+    return arg.replace(" ", "_").replace("-", "_")
+
+genders = {0: 'Male', 1: 'Female'}
+
+
 class Client(object):
 
-    def __init__(self, host):
+    def __init__(self, host, battletag_name, battletag_number):
         self.host = host
         self.http_client = requests
+        self.battle_id = "%s-%s" % (battletag_name, str(battletag_number))
 
-    def career_profile(self, battletag_name, battletag_number):
-        battle_id = "%s-%s" % (battletag_name, str(battletag_number))
-        url = "http://%s/api/d3/account/%s" % (self.host,battle_id )
+    def career_profile(self):
+        url = "http://%s/api/d3/account/%s" % (self.host, self.battle_id)
         r = self.http_client.get(url)
         data = json.loads(r.text)
-        heroes = []
-        for hero in data['heroes']:
-            heroes.append(Hero(hero['name'], hero['id'], hero['gender'], hero['class'], hero['last-updated'], battle_id))
-        last_hero_played = None
-        for hero in heroes:
-            if hero.id == data['last-hero-played']:
-                last_hero_played = hero
-        kills_map = data['kills']
-        kills = Kills(kills_map['monsters'], kills_map['elites'], kills_map['hardcoreMonsters'])
-        return Career(heroes, last_hero_played, data['last-updated'], kills)
+        return Career(data, self)
 
-    def load_hero(self,battle_id,hero_name):
-        url = "http://%s/api/d3/account/%s/hero/%s" % (self.host, battle_id, hero_name)
+    def load_hero(self, hero_name):
+        url = "http://%s/api/d3/account/%s/hero/%s" % (self.host, self.battle_id, hero_name)
         r = self.http_client.get(url)
-        data = json.loads(r.text)
-        active_sk = []
-        passive_sk = []
-        for skill in data['skills']['active']:
-            active_sk.append(Skill(skill))
-        for skill in data['skills']['passive']:
-            passive_sk.append(SkillElement(skill['slug'], skill['name'], skill['description']))
-        return active_sk, passive_sk
+        return json.loads(r.text)
 
 
-class Career(object):
-    """docstring for Career"""
-    def __init__(self, heroes, last_hero_played, last_updated, kills):
-        self.heroes = heroes
-        self.last_hero_played = last_hero_played
-        self.last_updated = last_updated
-        self.kills = kills
+class ApiObject(object):
+    """docstring for ApiObject"""
+    def __init__(self, arg, http_client):
+        self.http_client = http_client
+        priority = {}
+        for key in self.priority_boarding():
+            out_key, out_element = self.route_element(key, arg[key])
+            priority[out_key] = out_element
+            arg.pop(key)
+        if priority:
+            self.__dict__.update(priority)
+
+        self.__dict__.update(self.fetch_map(arg))
+
+    def fetch_list(self, arg):
+        out = []
+        for item in arg:
+            out.append(ApiObject(item, self.http_client))
+        return out
+
+    def route_element(self, key, value):
+        out_key = sanitize_key(key)
+        out_element = None
+        special_case = self.manage_special_case(out_key, value)
+        if special_case:
+            out_element = special_case
+        elif is_dictionary(value):
+            out_element = ApiObject(value, self.http_client)
+        elif is_sequence(value):
+            out_element = self.fetch_list(value)
+        else:
+            out_element = value
+        return out_key, out_element
+
+    def fetch_map(self, arg):
+        out = {}
+        for key in arg.keys():
+            out_key, out_element = self.route_element(key, arg[key])
+            out[out_key] = out_element
+        return out
+
+    def manage_special_case(self, key, value):
+        manage_method = "manage_%s" % (key)
+        if hasattr(self, manage_method):
+            return getattr(self, manage_method)(value)
+        else:
+            return None
+
+    def priority_boarding(self):
+        return []
 
 
-class Hero(object):
+class LazyObject(ApiObject):
 
-    genders = {0: 'Male', 1: 'Female'}
+    remotely_syncked = False
 
-    __client__ = None
-    active_skills = None
-    passive_skills = None
-
-    """docstring for Hero"""
-    def __init__(self, name, id_param, gender, class_name, last_updated, career_id):
-        self.career_id = career_id
-        self.name = name
-        self.id = id_param
-        self.gender = self.genders[gender]
-        self.class_name = class_name
-        self.last_updated = last_updated
-
-    def __lazy_load__(self):
-        if self.__client__:
-            self.active_skills , self.passive_skills = self.__client__.load_hero(self.career_id,self.name)
+    def http_client_callback(self):
+        pass
 
     def __getattribute__(self, name):
-        if object.__getattribute__(self, name) == None and name in ['active_skills', 'passive_skills']:
-            self.__lazy_load__()
-
+        if not object.__getattribute__(self, 'remotely_syncked') and name in  object.__getattribute__(self, 'lazy_load_attrs')():
+            data = self.http_client_callback()
+            self.__dict__.update(self.fetch_map(data))
+            object. __setattr__(self, 'remotely_syncked', True)
         return object.__getattribute__(self, name)
 
 
+class Career(ApiObject):
 
-class Kills(object):
-    """docstring for kills"""
-    def __init__(self, monsters, elites, hardcoreMonsters):
-        self.monsters = monsters
-        self.hardcoreMonsters = hardcoreMonsters
-        self.elites = elites
+    def manage_last_hero_played(self, value):
+        out_hero = None
+        for hero in self.heroes:
+            if hero.id == value:
+                out_hero = hero
+        return out_hero
 
-class Skill(object):
-    def __init__(self,map_descr):
-        skill_element = map_descr['skill']
-        self.skill = SkillElement(skill_element['slug'],skill_element['name'],skill_element['simpleDescription'])
-        rune_element = map_descr['rune']
-        self.rune = SkillElement(rune_element['slug'],rune_element['name'],rune_element['simpleDescription'])
+    def priority_boarding(self):
+        return ['heroes']
 
-class SkillElement(object):
-    def __init__(self, slug ,name,simpleDescription):#TODO manage icon
-        self.slug = slug
-        self.name = name
-        self.description = simpleDescription
+    def manage_heroes(self, value):
+        heroes = []
+        for hero in value:
+            heroes.append(Hero(hero, self.http_client))
+        return heroes
+
+    def manage_gender(self, value):
+        return genders[value]
+
+
+class Hero(LazyObject):
+
+    genders = {0: 'Male', 1: 'Female'}
+
+    def lazy_load_attrs(self):
+        return ['skills', 'items', 'followers', 'progress']
+
+    def http_client_callback(self):
+        return self.http_client.load_hero(self.name)
+
+    def manage_gender(self, value):
+        return genders[value]
+
