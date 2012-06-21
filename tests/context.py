@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-import diablo
+super_path = os.path.abspath('.')
+sys.path.insert(0, super_path)
 
-print 'super imported ', diablo
+print 'super imported ', super_path
