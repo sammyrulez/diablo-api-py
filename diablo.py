@@ -1,6 +1,11 @@
 import requests
 import json
 
+EU_SERVER = 'http://eu.battle.net'
+US_SERVER = 'http://us.battle.net'
+ASIA_SERVER = 'http://as.battle.net'
+
+
 
 def is_sequence(arg):
     return (not hasattr(arg, "strip") and not hasattr(arg, "iterkeys") and
@@ -93,16 +98,16 @@ class ApiObject(object):
 
 class LazyObject(ApiObject):
 
-    remotely_syncked = False
+    hydrate = False
 
     def http_client_callback(self):
         pass
 
     def __getattribute__(self, name):
-        if not object.__getattribute__(self, 'remotely_syncked') and name in  object.__getattribute__(self, 'lazy_load_attrs')():
+        if not object.__getattribute__(self, 'hydrate') and name in  object.__getattribute__(self, 'lazy_load_attrs')():
             data = self.http_client_callback()
             self.__dict__.update(self.fetch_map(data))
-            object. __setattr__(self, 'remotely_syncked', True)
+            object. __setattr__(self, 'hydrate', True)
         return object.__getattribute__(self, name)
 
 

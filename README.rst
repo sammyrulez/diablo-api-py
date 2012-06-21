@@ -25,7 +25,7 @@ Usage
     #import module
     import diablo
     #instantiate a client for a specific host and player
-    c = diablo.Client('host', 'battletag_name', 'battletag_number')
+    c = diablo.Client(diablo.US_SERVER, 'battletag_name', 'battletag_number')
     #read career data
     career = c.career_profile()
 
