@@ -3,6 +3,22 @@ import requests
 import json
 
 
+def is_sequence(arg):
+    return (not hasattr(arg, "strip") and not hasattr(arg, "iterkeys") and
+            hasattr(arg, "__getitem__") and
+            hasattr(arg, "__iter__"))
+
+
+def is_dictionary(arg):
+    return (not hasattr(arg, "strip")  and hasattr(arg, "iterkeys") and
+            hasattr(arg, "__getitem__") and
+            hasattr(arg, "__iter__"))
+
+
+def sanitize_key(arg):
+    return arg.replace(" ", "_").replace("-", "_")
+
+
 class Client(object):
 
     def __init__(self, host):
@@ -11,21 +27,12 @@ class Client(object):
 
     def career_profile(self, battletag_name, battletag_number):
         battle_id = "%s-%s" % (battletag_name, str(battletag_number))
-        url = "http://%s/api/d3/account/%s" % (self.host,battle_id )
+        url = "http://%s/api/d3/account/%s" % (self.host, battle_id)
         r = self.http_client.get(url)
         data = json.loads(r.text)
-        heroes = []
-        for hero in data['heroes']:
-            heroes.append(Hero(hero['name'], hero['id'], hero['gender'], hero['class'], hero['last-updated'], battle_id))
-        last_hero_played = None
-        for hero in heroes:
-            if hero.id == data['last-hero-played']:
-                last_hero_played = hero
-        kills_map = data['kills']
-        kills = Kills(kills_map['monsters'], kills_map['elites'], kills_map['hardcoreMonsters'])
-        return Career(heroes, last_hero_played, data['last-updated'], kills)
+        return Career(data, self)
 
-    def load_hero(self,battle_id,hero_name):
+    def load_hero(self, battle_id, hero_name):
         url = "http://%s/api/d3/account/%s/hero/%s" % (self.host, battle_id, hero_name)
         r = self.http_client.get(url)
         data = json.loads(r.text)
@@ -36,13 +43,56 @@ class Client(object):
         return active_sk, passive_sk
 
 
-class Career(object):
-    """docstring for Career"""
-    def __init__(self, heroes, last_hero_played, last_updated, kills):
-        self.heroes = heroes
-        self.last_hero_played = last_hero_played
-        self.last_updated = last_updated
-        self.kills = kills
+class ApiObject(object):
+    """docstring for ApiObject"""
+    def __init__(self, arg, http_client):
+        self.http_client = http_client
+
+        self.__dict__.update(self.fetch_map(arg))
+
+    def fetch_list(self, arg):
+        out = []
+        for item in arg:
+            out.append(ApiObject(item, self.http_client))
+        return out
+
+    def fetch_map(self, arg):
+        out = {}
+        for key in arg.keys():
+            #print key
+            out_key = sanitize_key(key)
+            special_case = self.manage_special(out_key, arg[key])
+            if special_case:
+                out[out_key] = special_case
+            elif is_dictionary(arg[key]):
+                #print out_key , ' is a  dictionary'
+                out[out_key] = ApiObject(arg[key], self.http_client)
+            elif is_sequence(arg[key]):
+                #print out_key , ' is a  list'
+                out[out_key] = self.fetch_list(arg[key])
+            else:
+                out[out_key] = arg[key]
+        return out
+
+    def manage_special(self, key, value):
+        manage_method = "manage_%s" % (key)
+        print 'checking for ' , manage_method
+        if hasattr(self, manage_method):
+            return getattr(self, manage_method)(value)
+        else:
+            return None
+
+
+class Career(ApiObject):
+
+    def manage_last_hero_played(self, value):
+        #out_hero = None
+        f#or hero in self.heroes:
+        #    if hero.id == value:
+        #        out_hero = hero
+        #return out_hero
+        pass
+
 
 
 class Hero(object):
