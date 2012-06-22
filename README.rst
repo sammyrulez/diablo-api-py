@@ -24,10 +24,8 @@ Usage
 
     #import module
     import diablo
-    #instantiate a client for a specific host and player
-    c = diablo.Client(diablo.US_SERVER, 'battletag_name', 'battletag_number')
-    #read career data
-    career = c.career_profile()
+    #read career data 
+    career = diablo.career_profile(diablo.US_SERVER, 'battletag_name', 'battletag_number')
 
 The career object has the same structure as the json returned from the same api call https://github.com/Blizzard/d3-api-docs#career-profile-example.
 
