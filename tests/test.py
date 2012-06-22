@@ -7,9 +7,7 @@ from mock_client import MockHttpClient
 class TestCareer(TestCase):
 
     def test_career_load(self):
-        c = diablo.Client('host', 'battletag_name', 'battletag_number')
-        c.http_client = MockHttpClient()
-        career = c.career_profile()
+        career = diablo.career_profile(diablo.US_SERVER, 'battletag_name', 'battletag_number', http_client=MockHttpClient())
         self.assertTrue(career.heroes)
         self.assertTrue(len(career.heroes) > 0)
         self.assertTrue(career.heroes[0].name)
@@ -27,22 +25,21 @@ class TestCareer(TestCase):
 class TestHero(TestCase):
 
     def test_hero_load(self):
-        c = diablo.Client('host', 'battletag_name', 'battletag_number')
-        c.http_client = MockHttpClient()
-        hero = c.load_hero("name")
+        hero = diablo.load_hero(diablo.US_SERVER, 'battletag_id', 'heroname', http_client=MockHttpClient())
         self.assertTrue(hero['class'])
         self.assertEquals(hero['class'], 'barbarian')
 
     def test_lazyness(self):
-        c = diablo.Client('host', 'battletag_name', 'battletag_number')
-        c.http_client = MockHttpClient()
-        career = c.career_profile()
-        self.assertTrue(career.heroes[0].skills)
-        self.assertTrue(career.heroes[0].skills.active)
-        self.assertTrue(career.heroes[0].skills.passive)
-        for skill_emelement in career.heroes[0].skills.active:
+        career = diablo.career_profile(diablo.US_SERVER, 'battletag_name', 'battletag_number', http_client=MockHttpClient())
+        self.assertTrue(career.heroes)
+        my_hero = career.heroes[0]
+        my_hero.http_client = MockHttpClient()
+        self.assertTrue(my_hero.skills)
+        self.assertTrue(my_hero.skills.active)
+        self.assertTrue(my_hero.skills.passive)
+        for skill_emelement in my_hero.skills.active:
                 self.assertTrue(skill_emelement)
                 self.assertTrue(skill_emelement.skill)
                 self.assertTrue(skill_emelement.rune)
-        self.assertEquals(career.heroes[0].gender, 'Male')
+        self.assertEquals(my_hero.gender, 'Male')
 

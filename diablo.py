@@ -6,7 +6,6 @@ US_SERVER = 'http://us.battle.net'
 ASIA_SERVER = 'http://as.battle.net'
 
 
-
 def is_sequence(arg):
     return (not hasattr(arg, "strip") and not hasattr(arg, "iterkeys") and
             hasattr(arg, "__getitem__") and
@@ -25,29 +24,25 @@ def sanitize_key(arg):
 genders = {0: 'Male', 1: 'Female'}
 
 
-class Client(object):
+def career_profile(host, battletag_name, battletag_number, http_client=requests):
+    battle_id = "%s-%s" % (battletag_name, str(battletag_number))
+    url = "%s/api/d3/account/%s" % (host, battle_id)
+    r = http_client.get(url)
+    data = json.loads(r.text)
+    return Career(data, host, battle_id)
 
-    def __init__(self, host, battletag_name, battletag_number):
-        self.host = host
-        self.http_client = requests
-        self.battle_id = "%s-%s" % (battletag_name, str(battletag_number))
 
-    def career_profile(self):
-        url = "http://%s/api/d3/account/%s" % (self.host, self.battle_id)
-        r = self.http_client.get(url)
-        data = json.loads(r.text)
-        return Career(data, self)
-
-    def load_hero(self, hero_name):
-        url = "http://%s/api/d3/account/%s/hero/%s" % (self.host, self.battle_id, hero_name)
-        r = self.http_client.get(url)
-        return json.loads(r.text)
+def load_hero(host, battle_id, hero_name, http_client=requests):
+    url = "%s/api/d3/account/%s/hero/%s" % (host, battle_id, hero_name)
+    r = http_client.get(url)
+    return json.loads(r.text)
 
 
 class ApiObject(object):
     """docstring for ApiObject"""
-    def __init__(self, arg, http_client):
-        self.http_client = http_client
+    def __init__(self, arg, host, battle_id):
+        self.host = host
+        self.battle_id = battle_id
         priority = {}
         for key in self.priority_boarding():
             out_key, out_element = self.route_element(key, arg[key])
@@ -61,7 +56,7 @@ class ApiObject(object):
     def fetch_list(self, arg):
         out = []
         for item in arg:
-            out.append(ApiObject(item, self.http_client))
+            out.append(ApiObject(item, self.host, self.battle_id))
         return out
 
     def route_element(self, key, value):
@@ -71,7 +66,7 @@ class ApiObject(object):
         if special_case:
             out_element = special_case
         elif is_dictionary(value):
-            out_element = ApiObject(value, self.http_client)
+            out_element = ApiObject(value, self.host, self.battle_id)
         elif is_sequence(value):
             out_element = self.fetch_list(value)
         else:
@@ -99,6 +94,7 @@ class ApiObject(object):
 class LazyObject(ApiObject):
 
     hydrate = False
+    http_client = requests
 
     def http_client_callback(self):
         pass
@@ -126,7 +122,7 @@ class Career(ApiObject):
     def manage_heroes(self, value):
         heroes = []
         for hero in value:
-            heroes.append(Hero(hero, self.http_client))
+            heroes.append(Hero(hero, self.host, self.battle_id))
         return heroes
 
     def manage_gender(self, value):
@@ -141,8 +137,7 @@ class Hero(LazyObject):
         return ['skills', 'items', 'followers', 'progress']
 
     def http_client_callback(self):
-        return self.http_client.load_hero(self.name)
+        return load_hero(self.host, self.battle_id, self.name, http_client=self.http_client)
 
     def manage_gender(self, value):
         return genders[value]
-
