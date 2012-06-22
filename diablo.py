@@ -131,8 +131,6 @@ class Career(ApiObject):
 
 class Hero(LazyObject):
 
-    genders = {0: 'Male', 1: 'Female'}
-
     def lazy_load_attrs(self):
         return ['skills', 'items', 'followers', 'progress']
 
