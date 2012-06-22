@@ -9,7 +9,7 @@ setup(
     description='Python client for Diablo 3 web api',
     author='sammyrulez',
     url='https://github.com/sammyrulez/diablo-api-py',
-    license='MIT',
+    license='BSD',
     packages=find_packages(exclude=('tests')),
     py_modules=['diablo'],
     install_requires=['requests']
