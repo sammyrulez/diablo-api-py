@@ -28,14 +28,20 @@ def career_profile(host, battletag_name, battletag_number, http_client=requests)
     battle_id = "%s-%s" % (battletag_name, str(battletag_number))
     url = "%s/api/d3/account/%s" % (host, battle_id)
     r = http_client.get(url)
-    data = json.loads(r.text)
-    return Career(data, host, battle_id)
+    if r.status_code == 200:
+        data = json.loads(r.text)
+        return Career(data, host, battle_id)
+    else:
+        raise Exception('Error:\n' + r.text)
 
 
 def load_hero(host, battle_id, hero_name, http_client=requests):
     url = "%s/api/d3/account/%s/hero/%s" % (host, battle_id, hero_name)
-    r = http_client.get(url)
-    return json.loads(r.text)
+    if r.status_code == 200:
+        r = http_client.get(url)
+        return json.loads(r.text)
+    else:
+        raise Exception('Error:\n' + r.text)
 
 
 class ApiObject(object):
