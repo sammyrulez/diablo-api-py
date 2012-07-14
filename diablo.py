@@ -37,8 +37,8 @@ def career_profile(host, battletag_name, battletag_number, http_client=requests)
 
 def load_hero(host, battle_id, hero_name, http_client=requests):
     url = "%s/api/d3/account/%s/hero/%s" % (host, battle_id, hero_name)
+    r = http_client.get(url)
     if r.status_code == 200:
-        r = http_client.get(url)
         return json.loads(r.text)
     else:
         raise Exception('Error:\n' + r.text)
