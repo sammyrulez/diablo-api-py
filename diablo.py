@@ -44,6 +44,15 @@ def load_hero(host, battle_id, hero_name, http_client=requests):
         raise Exception('Error:\n' + r.text)
 
 
+def load_item(host, item_id, http_client=requests):
+    url = "%s/api/d3/data/item/%s" % (host, item_id)
+    r = http_client.get(url)
+    if r.status_code == 200:
+        return json.loads(r.text)
+    else:
+        raise Exception('Error:\n' + r.text)
+
+
 class ApiObject(object):
     """docstring for ApiObject"""
     def __init__(self, arg, host, battle_id):
@@ -81,6 +90,7 @@ class ApiObject(object):
 
     def fetch_map(self, arg):
         out = {}
+        print arg
         for key in arg.keys():
             out_key, out_element = self.route_element(key, arg[key])
             out[out_key] = out_element
@@ -108,6 +118,7 @@ class LazyObject(ApiObject):
     def __getattribute__(self, name):
         if not object.__getattribute__(self, 'hydrate') and name in  object.__getattribute__(self, 'lazy_load_attrs')():
             data = self.http_client_callback()
+
             self.__dict__.update(self.fetch_map(data))
             object. __setattr__(self, 'hydrate', True)
         return object.__getattribute__(self, name)
@@ -131,9 +142,6 @@ class Career(ApiObject):
             heroes.append(Hero(hero, self.host, self.battle_id))
         return heroes
 
-    def manage_gender(self, value):
-        return genders[value]
-
 
 class Hero(LazyObject):
 
@@ -145,3 +153,22 @@ class Hero(LazyObject):
 
     def manage_gender(self, value):
         return genders[value]
+
+    def manage_items(self, value):
+        items = {}
+        for item in value:
+           if value[item]:
+                items[item] = Item(value[item], self.host, self.battle_id)
+        return items
+
+
+class Item(LazyObject):
+
+    def manage_attributes(self, value):
+        return value
+
+    def lazy_load_attrs(self):
+        return ['requiredLevel', 'itemLevel', 'bonusAffixes', 'dps', 'attacksPerSecond', 'minDamage', 'maxDamage', 'attributes', 'salvage']
+
+    def http_client_callback(self):
+        return load_item(self.host, '', http_client=self.http_client)

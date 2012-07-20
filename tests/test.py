@@ -30,16 +30,21 @@ class TestHero(TestCase):
         self.assertEquals(hero['class'], 'barbarian')
 
     def test_lazyness(self):
-        career = diablo.career_profile(diablo.US_SERVER, 'battletag_name', 'battletag_number', http_client=MockHttpClient())
+        mock_client = MockHttpClient()
+        career = diablo.career_profile(diablo.US_SERVER, 'battletag_name', 'battletag_number', http_client=mock_client)
         self.assertTrue(career.heroes)
         my_hero = career.heroes[0]
-        my_hero.http_client = MockHttpClient()
+        my_hero.http_client = mock_client
         self.assertTrue(my_hero.skills)
         self.assertTrue(my_hero.skills.active)
         self.assertTrue(my_hero.skills.passive)
+        self.assertTrue(my_hero.items)
+        self.assertTrue(my_hero.items['mainHand'])
+        mainHand = my_hero.items['mainHand']
+        mainHand.http_client = mock_client
+        self.assertTrue(mainHand.itemLevel)
         for skill_emelement in my_hero.skills.active:
                 self.assertTrue(skill_emelement)
                 self.assertTrue(skill_emelement.skill)
                 self.assertTrue(skill_emelement.rune)
         self.assertEquals(my_hero.gender, 'Male')
-
