@@ -157,7 +157,7 @@ class Hero(LazyObject):
     def manage_items(self, value):
         items = {}
         for item in value:
-           if value[item]:
+            if value[item]:
                 items[item] = Item(value[item], self.host, self.battle_id)
         return items
 
