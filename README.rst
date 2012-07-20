@@ -31,4 +31,4 @@ The career object has the same structure as the json returned from the same api 
 
 Attributes name differs from the json fields: '-' has been replaced with '_' to match python syntax.
 
-'heros', 'last_hero_played' and items attributes are 'Lazy' objects: details are loaded from the remote service only if you invoke them
+'heros', 'last_hero_played' and 'items' attributes are 'Lazy' objects: details are loaded from the remote service only if you invoke them
